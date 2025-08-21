@@ -3,17 +3,40 @@ import React from "react";
 import Button from "../Button";
 
 import styles from "./ToastPlayground.module.css";
-import Toast from "../Toast";
-import useToggle from "../../hooks/useToggle";
+import ToastShelf from "../ToastShelf/ToastShelf";
 
 const VARIANT_OPTIONS = ["notice", "warning", "success", "error"];
 
 function ToastPlayground() {
-  const [isHidden, toggleIsHidden] = useToggle();
-  const [variant, setVariant] = React.useState("notice");
-  const [comment, setComment] = React.useState("");
+  const [toasts, setToasts] = React.useState([]);
+  const [variant, setVariant] = React.useState(VARIANT_OPTIONS[0]);
+  const [message, setMessage] = React.useState("");
 
-  console.log(isHidden);
+  function handleCreateToast(event) {
+    event.preventDefault();
+
+    const nextToasts = [
+      ...toasts,
+      {
+        id: crypto.randomUUID(),
+        message,
+        variant,
+      },
+    ];
+
+    setToasts(nextToasts);
+
+    setMessage("");
+    setVariant(VARIANT_OPTIONS[0]);
+  }
+
+  function handleDismiss(id) {
+    const nextToasts = toasts.filter((toast) => {
+      return toast.id !== id;
+    });
+
+    setToasts(nextToasts);
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -22,21 +45,10 @@ function ToastPlayground() {
         <h1>Toast Playground</h1>
       </header>
 
-      {isHidden && (
-        <Toast
-          comment={comment}
-          variant={variant}
-          handleDismiss={toggleIsHidden}
-        />
-      )}
+      <ToastShelf toasts={toasts} handleDismiss={handleDismiss} />
 
-      <div className={styles.controlsWrapper}>
-        <form
-          className={styles.row}
-          onSubmit={(event) => {
-            event.preventDefault();
-          }}
-        >
+      <form className={styles.controlsWrapper} onSubmit={handleCreateToast}>
+        <div className={styles.row}>
           <label
             htmlFor="message"
             className={styles.label}
@@ -48,54 +60,48 @@ function ToastPlayground() {
             <textarea
               id="message"
               className={styles.messageInput}
-              value={comment}
+              value={message}
               onChange={(event) => {
-                setComment(event.target.value);
+                setMessage(event.target.value);
               }}
               required={true}
             />
           </div>
-        </form>
+        </div>
 
-        <form
-          className={styles.row}
-          onSubmit={(event) => {
-            event.preventDefault();
-          }}
-        >
+        <div className={styles.row}>
           <div className={styles.label}>Variant</div>
 
-          {VARIANT_OPTIONS.map((option) => (
-            <div
-              key={option}
-              className={`${styles.inputWrapper} ${styles.radioWrapper}`}
-            >
-              <label htmlFor={option}>
-                <input
-                  id={option}
-                  type="radio"
-                  name="variant"
-                  value={option}
-                  checked={option === variant}
-                  onChange={(event) => {
-                    setVariant(event.target.value);
-                  }}
-                />
-                {option}
-              </label>{" "}
-            </div>
-          ))}
-        </form>
+          <div className={`${styles.inputWrapper} ${styles.radioWrapper}`}>
+            {VARIANT_OPTIONS.map((option) => {
+              const id = `variant-${option}`;
+
+              return (
+                <label htmlFor={option}>
+                  <input
+                    id={id}
+                    type="radio"
+                    name="variant"
+                    value={option}
+                    checked={option === variant}
+                    onChange={(event) => {
+                      setVariant(event.target.value);
+                    }}
+                  />
+                  {option}
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
         <div className={styles.row}>
           <div className={styles.label} />
           <div className={`${styles.inputWrapper} ${styles.radioWrapper}`}>
-            <Button onClick={toggleIsHidden} disabled={!comment || isHidden}>
-              Pop Toast!
-            </Button>
+            <Button>Pop Toast!</Button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
